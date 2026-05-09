@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'idea'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+group = 'com.game'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+javafx {
+    version = "21.0.1"
+    modules = ['javafx.controls', 'javafx.fxml']
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.openjfx:javafx-controls:21.0.1'
+    implementation 'org.openjfx:javafx-fxml:21.0.1'
+    implementation 'org.openjfx:javafx-graphics:21.0.1'
+    implementation 'org.openjfx:javafx-base:21.0.1'
+}
+
+application {
+    mainClass = 'com.game.dice.MainApp'
+}
