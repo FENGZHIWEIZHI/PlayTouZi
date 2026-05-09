@@ -27,6 +27,7 @@ public class GameSettings {
     private int fixedRounds = 10;       // 局数赛的固定局数
     private int eliminationStartScore = 20; // 淘汰赛初始分数
     private String humanPlayerName = "玩家";
+    private boolean coachMode = true;     // 教练模式（概率提示）
 
     public int getPlayerCount() { return playerCount; }
     public void setPlayerCount(int playerCount) {
@@ -48,4 +49,7 @@ public class GameSettings {
 
     public String getHumanPlayerName() { return humanPlayerName; }
     public void setHumanPlayerName(String humanPlayerName) { this.humanPlayerName = humanPlayerName; }
+
+    public boolean isCoachMode() { return coachMode; }
+    public void setCoachMode(boolean coachMode) { this.coachMode = coachMode; }
 }

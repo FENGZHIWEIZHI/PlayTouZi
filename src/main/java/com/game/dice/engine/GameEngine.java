@@ -20,12 +20,18 @@ public class GameEngine {
     private boolean roundActive;
     private boolean gameActive;
 
+    // 新增系统
+    private GameStats gameStats;
+    private Achievement achievement;
+    private SkinManager skinManager;
+
     // 回调
     private Consumer<String> onLogUpdate;
     private Consumer<List<Player>> onPlayersUpdate;
     private Consumer<Player> onTurnChanged;
     private Consumer<RoundResult> onRoundEnd;
     private Consumer<String> onGameEnd;
+    private Consumer<List<String>> onAchievementUnlocked;
     private Runnable onGameStateChanged;
 
     public GameEngine(GameSettings settings) {
@@ -34,6 +40,8 @@ public class GameEngine {
         this.gameLog = new ArrayList<>();
         this.roundNumber = 0;
         this.gameActive = false;
+        this.achievement = new Achievement();
+        this.skinManager = new SkinManager();
 
         // 创建玩家
         players.add(new Player(settings.getHumanPlayerName(), true));
@@ -48,6 +56,7 @@ public class GameEngine {
     public void setOnLogUpdate(Consumer<String> callback) { this.onLogUpdate = callback; }
     public void setOnPlayersUpdate(Consumer<List<Player>> callback) { this.onPlayersUpdate = callback; }
     public void setOnTurnChanged(Consumer<Player> callback) { this.onTurnChanged = callback; }
+    public void setOnAchievementUnlocked(Consumer<List<String>> callback) { this.onAchievementUnlocked = callback; }
     public void setOnRoundEnd(Consumer<RoundResult> callback) { this.onRoundEnd = callback; }
     public void setOnGameEnd(Consumer<String> callback) { this.onGameEnd = callback; }
     public void setOnGameStateChanged(Runnable callback) { this.onGameStateChanged = callback; }
@@ -59,6 +68,7 @@ public class GameEngine {
      */
     public void startGame() {
         gameActive = true;
+        gameStats = new GameStats(players);
         addLog("===== 游戏开始 =====");
         addLog("模式: " + settings.getGameMode().getDisplayName());
         addLog("玩家数: " + settings.getPlayerCount());
@@ -211,6 +221,25 @@ public class GameEngine {
         }
 
         roundActive = false;
+
+        // 记录统计
+        if (gameStats != null) {
+            gameStats.recordRound(result);
+            // 更新成就
+            GameStats.PlayerStats humanStats = gameStats.getPlayerStats(getHumanPlayer().getName());
+            if (humanStats != null) {
+                List<String> achNotifications = achievement.updateProgress(humanStats, getHumanPlayer().getConsecutiveWins());
+                if (!achNotifications.isEmpty() && onAchievementUnlocked != null) {
+                    onAchievementUnlocked.accept(achNotifications);
+                }
+                // 解锁对应皮肤
+                for (Achievement.AchievementType ach : achievement.getUnlocked()) {
+                    SkinManager.SkinType skin = SkinManager.getSkinForAchievement(ach);
+                    if (skin != null) skinManager.unlockSkin(skin);
+                }
+            }
+        }
+
         updatePlayers();
 
         if (onRoundEnd != null) {
@@ -373,6 +402,9 @@ public class GameEngine {
 
     public List<Player> getPlayers() { return players; }
     public Bid getCurrentBid() { return currentBid; }
+    public GameStats getGameStats() { return gameStats; }
+    public Achievement getAchievement() { return achievement; }
+    public SkinManager getSkinManager() { return skinManager; }
     public Player getCurrentPlayer() {
         if (currentPlayerIndex >= 0 && currentPlayerIndex < players.size()) {
             return players.get(currentPlayerIndex);
