@@ -266,14 +266,24 @@ public class GameEngine {
         Player current = players.get(currentPlayerIndex);
         if (current.isHuman() || current.isEliminated()) return;
 
+        // LLM模式需要更长的思考时间（网络请求）
+        boolean useLLM = isLLMAvailable();
+        int minDelay = useLLM ? 500 : 1500;
+        int maxDelay = useLLM ? 1500 : 1500;
+
         // 延迟模拟思考
         new Thread(() -> {
-            try { Thread.sleep(1500 + new Random().nextInt(1500)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            try { Thread.sleep(minDelay + new Random().nextInt(maxDelay)); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
 
             Platform.runLater(() -> {
                 if (!roundActive || !gameActive) return;
 
-                BotDecision decision = BotAI.makeDecision(current, currentBid, lastBidder, players, roundNumber);
+                BotDecision decision;
+                if (useLLM) {
+                    decision = LLMBotAI.makeDecision(current, currentBid, lastBidder, players, roundNumber);
+                } else {
+                    decision = BotAI.makeDecision(current, currentBid, lastBidder, players, roundNumber);
+                }
 
                 if (decision.isChallenge()) {
                     challenge();
@@ -283,6 +293,18 @@ public class GameEngine {
                 }
             });
         }).start();
+    }
+
+    /**
+     * 判断是否应该使用LLM AI
+     */
+    private boolean isLLMAvailable() {
+        AIConfig.AIMode mode = settings.getAiMode();
+        AIConfig config = AIConfig.getInstance();
+        if (mode == AIConfig.AIMode.LLM || mode == AIConfig.AIMode.HYBRID) {
+            return config.isApiKeyConfigured();
+        }
+        return false;
     }
 
     /**

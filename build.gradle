@@ -27,6 +27,9 @@ dependencies {
     implementation 'org.openjfx:javafx-fxml:21.0.1'
     implementation 'org.openjfx:javafx-graphics:21.0.1'
     implementation 'org.openjfx:javafx-base:21.0.1'
+    
+    // JSON processing for LLM API
+    implementation 'com.google.code.gson:gson:2.10.1'
 }
 
 application {

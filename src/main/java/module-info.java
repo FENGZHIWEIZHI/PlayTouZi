@@ -1,6 +1,8 @@
 module com.game.dice {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.net.http;
+    requires com.google.gson;
 
     opens com.game.dice to javafx.fxml;
     exports com.game.dice;

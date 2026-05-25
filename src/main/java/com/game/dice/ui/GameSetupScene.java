@@ -1,6 +1,8 @@
 package com.game.dice.ui;
 
 import com.game.dice.MainApp;
+import com.game.dice.engine.AIConfig;
+import com.game.dice.engine.LLMClient;
 import com.game.dice.model.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -126,6 +128,9 @@ public class GameSetupScene {
         coachCheckBox.setFont(Font.font("Microsoft YaHei", 14));
         coachCheckBox.selectedProperty().addListener((obs, old, val) -> settings.setCoachMode(val));
 
+        // AI模式选择
+        VBox aiConfigBox = createAIConfigBox();
+
         // 功能按钮区
         HBox featureBox = createFeatureButtons();
 
@@ -145,7 +150,8 @@ public class GameSetupScene {
                 playerLabel, playerSpinner,
                 modeLabel, modeBox,
                 paramLabel, paramSpinner,
-                coachCheckBox
+                coachCheckBox,
+                aiConfigBox
         );
 
         // 规则提示
@@ -312,6 +318,92 @@ public class GameSetupScene {
         alert.setContentText(sb.toString());
         alert.getDialogPane().setPrefWidth(550);
         alert.showAndWait();
+    }
+
+    /**
+     * AI配置区域
+     */
+    private VBox createAIConfigBox() {
+        AIConfig aiConfig = AIConfig.getInstance();
+
+        Label aiLabel = createLabel("🤖 AI模式:");
+        aiLabel.setTextFill(Color.CYAN);
+
+        ToggleGroup aiGroup = new ToggleGroup();
+        VBox aiModeBox = new VBox(6);
+
+        for (AIConfig.AIMode mode : AIConfig.AIMode.values()) {
+            RadioButton rb = new RadioButton(mode.getDisplayName());
+            rb.setToggleGroup(aiGroup);
+            rb.setUserData(mode);
+            rb.setTextFill(Color.WHITE);
+            rb.setFont(Font.font("Microsoft YaHei", 13));
+            if (mode == aiConfig.getAiMode()) rb.setSelected(true);
+            aiModeBox.getChildren().add(rb);
+        }
+
+        aiGroup.selectedToggleProperty().addListener((obs, old, val) -> {
+            if (val != null) {
+                AIConfig.AIMode mode = (AIConfig.AIMode) val.getUserData();
+                settings.setAiMode(mode);
+                aiConfig.setAiMode(mode);
+                aiConfig.saveToFile();
+            }
+        });
+
+        // API Key 输入
+        Label keyLabel = new Label("API Key:");
+        keyLabel.setFont(Font.font("Microsoft YaHei", FontWeight.BOLD, 13));
+        keyLabel.setTextFill(Color.LIGHTGRAY);
+
+        PasswordField keyField = new PasswordField();
+        keyField.setPromptText("输入mimo API Key (选择AI大模型/混合模式时需要)");
+        keyField.setPrefWidth(300);
+        keyField.setStyle("-fx-font-size: 12px; -fx-padding: 6;");
+        if (aiConfig.isApiKeyConfigured()) {
+            keyField.setText(aiConfig.getApiKey());
+        }
+        keyField.textProperty().addListener((obs, old, val) -> {
+            aiConfig.setApiKey(val);
+            aiConfig.saveToFile();
+        });
+
+        // 连接测试按钮
+        Button testBtn = new Button("🔗 测试连接");
+        testBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 12; -fx-background-color: #2ecc71; -fx-text-fill: white; -fx-background-radius: 5;");
+        testBtn.setOnAction(e -> {
+            testBtn.setDisable(true);
+            testBtn.setText("测试中...");
+
+            new Thread(() -> {
+                boolean ok = LLMClient.testConnection();
+                javafx.application.Platform.runLater(() -> {
+                    testBtn.setDisable(false);
+                    if (ok) {
+                        testBtn.setText("✅ 连接成功");
+                        testBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-background-radius: 5;");
+                    } else {
+                        testBtn.setText("❌ 连接失败");
+                        testBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 12; -fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 5;");
+                    }
+                    // 3秒后恢复
+                    new Thread(() -> {
+                        try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+                        javafx.application.Platform.runLater(() -> {
+                            testBtn.setText("🔗 测试连接");
+                            testBtn.setStyle("-fx-font-size: 12px; -fx-padding: 6 12; -fx-background-color: #2ecc71; -fx-text-fill: white; -fx-background-radius: 5;");
+                        });
+                    }).start();
+                });
+            }).start();
+        });
+
+        HBox keyBox = new HBox(8, keyField, testBtn);
+        keyBox.setAlignment(Pos.CENTER_LEFT);
+
+        VBox box = new VBox(6, aiLabel, aiModeBox, keyLabel, keyBox);
+        box.setPadding(new Insets(10, 0, 0, 0));
+        return box;
     }
 
     private Label createLabel(String text) {

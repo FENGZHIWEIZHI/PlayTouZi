@@ -1,5 +1,7 @@
 package com.game.dice.model;
 
+import com.game.dice.engine.AIConfig;
+
 /**
  * 游戏设置类
  */
@@ -28,6 +30,7 @@ public class GameSettings {
     private int eliminationStartScore = 20; // 淘汰赛初始分数
     private String humanPlayerName = "玩家";
     private boolean coachMode = true;     // 教练模式（概率提示）
+    private AIConfig.AIMode aiMode = AIConfig.AIMode.RULE_BASED;  // AI模式
 
     public int getPlayerCount() { return playerCount; }
     public void setPlayerCount(int playerCount) {
@@ -52,4 +55,7 @@ public class GameSettings {
 
     public boolean isCoachMode() { return coachMode; }
     public void setCoachMode(boolean coachMode) { this.coachMode = coachMode; }
+
+    public AIConfig.AIMode getAiMode() { return aiMode; }
+    public void setAiMode(AIConfig.AIMode aiMode) { this.aiMode = aiMode; }
 }
